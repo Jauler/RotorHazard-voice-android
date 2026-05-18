@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.rhvoice.BuildConfig
 import com.rhvoice.service.ConnectionStatus
 import com.rhvoice.vm.MainViewModel
 
@@ -37,7 +38,7 @@ fun MainScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("RH-Voice") },
+                title = { Text("RH-Voice ${BuildConfig.VERSION_NAME}") },
                 actions = {
                     IconButton(onClick = onOpenSettings) {
                         Icon(Icons.Filled.Settings, contentDescription = "Settings")
