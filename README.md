@@ -112,4 +112,4 @@ expect from a hand-written project of equivalent scope.
 
 ## License
 
-MIT. See `LICENSE`.
+GPL-3.0. See `LICENSE`.
