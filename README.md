@@ -101,6 +101,15 @@ the persistent notification goes away.
 - Single-timer setups only. `phonetic_split_call` (intermediate-gate split times
   from a cluster setup) is not yet handled.
 
+## AI disclosure
+
+This app was built with heavy use of AI agents — protocol research,
+design, and most of the implementation were produced through AI-assisted
+iteration with a human in the loop driving requirements and review. Treat the
+code accordingly: it builds, it works with a real RotorHazard timer, but it
+hasn't been through the kind of long-term human-maintainer review you'd
+expect from a hand-written project of equivalent scope.
+
 ## License
 
 MIT. See `LICENSE`.
