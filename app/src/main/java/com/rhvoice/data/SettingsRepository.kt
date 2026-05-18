@@ -32,6 +32,10 @@ class SettingsRepository(context: Context) {
         _settings.value = next
     }
 
+    var batteryNudgeShown: Boolean
+        get() = prefs.getBoolean(K_BATTERY_NUDGE_SHOWN, false)
+        set(value) { prefs.edit().putBoolean(K_BATTERY_NUDGE_SHOWN, value).apply() }
+
     private fun load(): Settings = Settings(
         url = prefs.getString(K_URL, "") ?: "",
         username = prefs.getString(K_USER, "") ?: "",
@@ -69,5 +73,6 @@ class SettingsRepository(context: Context) {
         const val K_RATE = "tts_rate"
         const val K_VOLUME = "tts_volume"
         const val K_PAN = "tts_pan"
+        const val K_BATTERY_NUDGE_SHOWN = "battery_nudge_shown"
     }
 }

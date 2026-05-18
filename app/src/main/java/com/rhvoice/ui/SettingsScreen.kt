@@ -34,8 +34,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.PowerManager
+import android.provider.Settings as AndroidSettings
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -156,8 +163,63 @@ fun SettingsScreen(
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) { Text("Speak sample") }
+
+            Spacer(Modifier.height(8.dp))
+            HorizontalDivider()
+            SectionHeader("Battery")
+            BatteryOptimizationCard()
         }
     }
+}
+
+@Composable
+private fun BatteryOptimizationCard() {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var ignoring by remember { mutableStateOf(isIgnoringBatteryOptimizations(context)) }
+
+    // Re-check whenever we return from the system settings screen.
+    DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                ignoring = isIgnoringBatteryOptimizations(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = if (ignoring)
+                "Battery optimization is disabled for RH-Voice. The connection will keep running with the screen off."
+            else
+                "Android may pause the connection after the screen has been off for a few minutes. " +
+                "Disable battery optimization so race events keep being announced.",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        Button(
+            onClick = {
+                val intent = if (!ignoring) {
+                    Intent(
+                        AndroidSettings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                        Uri.parse("package:${context.packageName}"),
+                    )
+                } else {
+                    Intent(AndroidSettings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                }
+                context.startActivity(intent)
+            },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(if (ignoring) "Manage battery optimization" else "Disable battery optimization")
+        }
+    }
+}
+
+private fun isIgnoringBatteryOptimizations(context: Context): Boolean {
+    val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+    return pm.isIgnoringBatteryOptimizations(context.packageName)
 }
 
 @Composable
