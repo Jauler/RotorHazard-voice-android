@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Scale the 64-viewBox design into the 72dp safe zone of the 108 canvas.
+         scale = 72/64 = 1.125; translate so design is centered: (108-72)/2 = 18. -->
+    <group
+        android:translateX="18"
+        android:translateY="18"
+        android:scaleX="1.125"
+        android:scaleY="1.125">
+
+        <!-- Rounded triangle with vertical teal gradient -->
+        <path
+            android:pathData="M32,6 C30,6 28.5,7 27.6,8.6 L5.6,49.2 C4.7,50.8 4.7,52.7 5.6,54.3 C6.5,55.9 8.1,56.8 10,56.8 L54,56.8 C55.9,56.8 57.5,55.9 58.4,54.3 C59.3,52.7 59.3,50.8 58.4,49.2 L36.4,8.6 C35.5,7 34,6 32,6 Z">
+            <aapt:attr name="android:fillColor">
+                <gradient
+                    android:type="linear"
+                    android:startX="32" android:startY="6"
+                    android:endX="32" android:endY="56.8">
+                    <item android:offset="0.0" android:color="#FF2BC4D6"/>
+                    <item android:offset="1.0" android:color="#FF1577B3"/>
+                </gradient>
+            </aapt:attr>
+        </path>
+
+        <!-- Propeller blade 1 (no rotation) -->
+        <path
+            android:pathData="M32,40 m-2.6,-9.5 a2.6,9.5 0 1,0 5.2,0 a2.6,9.5 0 1,0 -5.2,0 Z"
+            android:fillColor="#FFFFFFFF"/>
+
+        <!-- Propeller blade 2 (rotate 120° around hub at 32,40) -->
+        <group android:pivotX="32" android:pivotY="40" android:rotation="120">
+            <path
+                android:pathData="M32,40 m-2.6,-9.5 a2.6,9.5 0 1,0 5.2,0 a2.6,9.5 0 1,0 -5.2,0 Z"
+                android:fillColor="#FFFFFFFF"/>
+        </group>
+
+        <!-- Propeller blade 3 (rotate 240° around hub) -->
+        <group android:pivotX="32" android:pivotY="40" android:rotation="240">
+            <path
+                android:pathData="M32,40 m-2.6,-9.5 a2.6,9.5 0 1,0 5.2,0 a2.6,9.5 0 1,0 -5.2,0 Z"
+                android:fillColor="#FFFFFFFF"/>
+        </group>
+
+        <!-- Hub -->
+        <path
+            android:pathData="M32,40 m-2.8,0 a2.8,2.8 0 1,0 5.6,0 a2.8,2.8 0 1,0 -5.6,0 Z"
+            android:fillColor="#FFFFFFFF"/>
+
+        <!-- Voice waves: left near, left far, right near, right far -->
+        <path
+            android:pathData="M23,31 Q21,34 23,37"
+            android:strokeColor="#FFFFFFFF" android:strokeWidth="1.6"
+            android:strokeLineCap="round" android:fillColor="#00000000"/>
+        <path
+            android:pathData="M20,28 Q16,34 20,40"
+            android:strokeColor="#8CFFFFFF" android:strokeWidth="1.6"
+            android:strokeLineCap="round" android:fillColor="#00000000"/>
+        <path
+            android:pathData="M41,31 Q43,34 41,37"
+            android:strokeColor="#FFFFFFFF" android:strokeWidth="1.6"
+            android:strokeLineCap="round" android:fillColor="#00000000"/>
+        <path
+            android:pathData="M44,28 Q48,34 44,40"
+            android:strokeColor="#8CFFFFFF" android:strokeWidth="1.6"
+            android:strokeLineCap="round" android:fillColor="#00000000"/>
+    </group>
+</vector>
