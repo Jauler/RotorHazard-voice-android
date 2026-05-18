@@ -12,3 +12,5 @@ local.properties
 keystore.properties
 *.keystore
 *.jks
+CLAUDE.md
+TODO.md
