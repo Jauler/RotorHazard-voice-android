@@ -6,7 +6,6 @@ import android.media.AudioFocusRequest
 import android.media.AudioFormat
 import android.media.AudioManager
 import android.media.AudioTrack
-import android.media.audiofx.LoudnessEnhancer
 import android.os.Build
 import android.util.Log
 import com.rhvoice.data.SettingsRepository
@@ -32,10 +31,7 @@ class ToneScheduler(
     private val audioManager = context.applicationContext
         .getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
-    private val sessionId: Int = audioManager.generateAudioSessionId()
-    private val loudnessEnhancer: LoudnessEnhancer? = runCatching {
-        LoudnessEnhancer(sessionId).apply { enabled = true }
-    }.getOrNull()
+    private val boosted = BoostedAudioSession(audioManager)
 
     private val attrs: AudioAttributes = AudioAttributes.Builder()
         .setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
@@ -137,7 +133,7 @@ class ToneScheduler(
     fun shutdown() {
         Log.i(TAG, "shutdown()")
         scope.cancel()
-        runCatching { loudnessEnhancer?.release() }
+        boosted.release()
         releaseFocus()
     }
 
@@ -149,11 +145,7 @@ class ToneScheduler(
      * a 25-second wait. Track is released on a coroutine after the tone duration.
      */
     private fun play(samples: ShortArray) {
-        val v = repo.settings.value.ttsVolume
-            .coerceIn(0f, com.rhvoice.tts.AnnouncementSpeaker.MAX_VOLUME)
-        val boostMb = ((v - 1f).coerceAtLeast(0f) *
-            com.rhvoice.tts.AnnouncementSpeaker.MAX_BOOST_MB).toInt()
-        loudnessEnhancer?.runCatching { setTargetGain(boostMb) }
+        boosted.applyVolume(repo.settings.value.ttsVolume)
 
         val track = try {
             val bytes = samples.size * 2
@@ -169,7 +161,7 @@ class ToneScheduler(
                     )
                     .setBufferSizeInBytes(bytes)
                     .setTransferMode(AudioTrack.MODE_STATIC)
-                    .setSessionId(sessionId)
+                    .setSessionId(boosted.sessionId)
                     .build()
             } else {
                 @Suppress("DEPRECATION")
