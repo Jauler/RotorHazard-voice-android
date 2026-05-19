@@ -33,6 +33,6 @@ class BoostedAudioSession(audioManager: AudioManager) {
 
     companion object {
         const val MAX_VOLUME = 2.0f
-        const val MAX_BOOST_MB = 1000f // +10 dB at MAX_VOLUME
+        const val MAX_BOOST_MB = 1200f // +12 dB at MAX_VOLUME
     }
 }
