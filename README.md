@@ -5,7 +5,7 @@ race timers. Connect your phone to the timer once, lock the screen, and let RH-V
 read out lap times and play the same staging / start / end tones the RotorHazard web UI
 plays — even while music keeps playing in the background.
 
-Built because the web UI's audio only works while the browser tab is open and the screen
+Built because on mobiles the web UI's audio only works while the browser tab is open and the screen
 is on. A phone in your pocket should do the same job.
 
 ## Features
