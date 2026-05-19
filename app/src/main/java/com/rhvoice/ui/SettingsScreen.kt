@@ -149,7 +149,7 @@ fun SettingsScreen(
 
             FloatSlider("Pitch", settings.ttsPitch, 0.5f..2.0f, vm::setPitch)
             FloatSlider("Speech rate", settings.ttsRate, 0.5f..2.0f, vm::setRate)
-            FloatSlider("Volume", settings.ttsVolume, 0.0f..1.0f, vm::setVolume)
+            FloatSlider("Volume", settings.ttsVolume, 0.0f..2.0f, vm::setVolume)
             FloatSlider("Pan (L↔R)", settings.ttsPan, -1.0f..1.0f, vm::setPan)
 
             Row(

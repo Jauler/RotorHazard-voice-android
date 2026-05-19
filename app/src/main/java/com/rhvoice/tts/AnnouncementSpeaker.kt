@@ -4,6 +4,7 @@ import android.content.Context
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
+import android.media.audiofx.LoudnessEnhancer
 import android.os.Build
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
@@ -34,6 +35,11 @@ class AnnouncementSpeaker(
     private val outstanding = AtomicInteger(0)
     private val seq = AtomicInteger(0)
 
+    private val sessionId: Int = audioManager.generateAudioSessionId()
+    private val loudnessEnhancer: LoudnessEnhancer? = runCatching {
+        LoudnessEnhancer(sessionId).apply { enabled = true }
+    }.getOrNull()
+
     private var ready = false
     private val tts: TextToSpeech = TextToSpeech(appContext) { status ->
         ready = status == TextToSpeech.SUCCESS
@@ -62,9 +68,15 @@ class AnnouncementSpeaker(
         tts.setPitch(s.ttsPitch.coerceIn(0.1f, 2.0f))
         tts.setSpeechRate(s.ttsRate.coerceIn(0.1f, 3.0f))
 
+        val v = s.ttsVolume.coerceIn(0f, MAX_VOLUME)
+        val ttsVolume = v.coerceAtMost(1f)
+        val boostMb = ((v - 1f).coerceAtLeast(0f) * MAX_BOOST_MB).toInt()
+        loudnessEnhancer?.runCatching { setTargetGain(boostMb) }
+
         val params = Bundle().apply {
-            putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, s.ttsVolume.coerceIn(0f, 1f))
+            putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, ttsVolume)
             putFloat(TextToSpeech.Engine.KEY_PARAM_PAN, s.ttsPan.coerceIn(-1f, 1f))
+            putInt(TextToSpeech.Engine.KEY_PARAM_SESSION_ID, sessionId)
         }
 
         val duck = s.duckMusic
@@ -103,6 +115,12 @@ class AnnouncementSpeaker(
     fun shutdown() {
         runCatching { tts.stop() }
         runCatching { tts.shutdown() }
+        runCatching { loudnessEnhancer?.release() }
         releaseFocus()
+    }
+
+    companion object {
+        const val MAX_VOLUME = 2.0f
+        const val MAX_BOOST_MB = 1000f // +10 dB at MAX_VOLUME
     }
 }

@@ -36,7 +36,7 @@ class SocketService : Service() {
         super.onCreate()
         ensureNotificationChannel()
         speaker = AnnouncementSpeaker(this, RhVoiceApp.get().settingsRepository)
-        tones = ToneScheduler(this)
+        tones = ToneScheduler(this, RhVoiceApp.get().settingsRepository)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {

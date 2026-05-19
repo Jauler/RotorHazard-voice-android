@@ -4,6 +4,7 @@ import android.content.Context
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
+import android.media.audiofx.LoudnessEnhancer
 import android.os.Build
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
@@ -28,6 +29,11 @@ class TtsPreviewer(context: Context) {
         } else null
 
     private var holdingFocus = false
+
+    private val sessionId: Int = audioManager.generateAudioSessionId()
+    private val loudnessEnhancer: LoudnessEnhancer? = runCatching {
+        LoudnessEnhancer(sessionId).apply { enabled = true }
+    }.getOrNull()
 
     private var ready = false
     private val tts: TextToSpeech = TextToSpeech(appContext) { status ->
@@ -65,9 +71,15 @@ class TtsPreviewer(context: Context) {
         tts.setPitch(pitch.coerceIn(0.1f, 2.0f))
         tts.setSpeechRate(rate.coerceIn(0.1f, 3.0f))
 
+        val v = volume.coerceIn(0f, AnnouncementSpeaker.MAX_VOLUME)
+        val ttsVolume = v.coerceAtMost(1f)
+        val boostMb = ((v - 1f).coerceAtLeast(0f) * AnnouncementSpeaker.MAX_BOOST_MB).toInt()
+        loudnessEnhancer?.runCatching { setTargetGain(boostMb) }
+
         val params = Bundle().apply {
-            putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, volume.coerceIn(0f, 1f))
+            putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, ttsVolume)
             putFloat(TextToSpeech.Engine.KEY_PARAM_PAN, pan.coerceIn(-1f, 1f))
+            putInt(TextToSpeech.Engine.KEY_PARAM_SESSION_ID, sessionId)
         }
 
         // QUEUE_FLUSH means a previous preview's onDone won't fire — release any focus we held.
@@ -111,6 +123,7 @@ class TtsPreviewer(context: Context) {
     fun shutdown() {
         runCatching { tts.stop() }
         runCatching { tts.shutdown() }
+        runCatching { loudnessEnhancer?.release() }
         releaseFocus()
     }
 }
