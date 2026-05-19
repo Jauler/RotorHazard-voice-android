@@ -23,6 +23,7 @@ class SettingsViewModel(
     fun setRate(v: Float) = repo.update { it.copy(ttsRate = v) }
     fun setVolume(v: Float) = repo.update { it.copy(ttsVolume = v) }
     fun setPan(v: Float) = repo.update { it.copy(ttsPan = v) }
+    fun setDuckMusic(v: Boolean) = repo.update { it.copy(duckMusic = v) }
 
     companion object {
         val Factory: ViewModelProvider.Factory = object : ViewModelProvider.Factory {

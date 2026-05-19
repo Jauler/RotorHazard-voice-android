@@ -46,6 +46,7 @@ class SettingsRepository(context: Context) {
         ttsRate = prefs.getFloat(K_RATE, 1.0f),
         ttsVolume = prefs.getFloat(K_VOLUME, 1.0f),
         ttsPan = prefs.getFloat(K_PAN, 0.0f),
+        duckMusic = prefs.getBoolean(K_DUCK, true),
     )
 
     private fun save(s: Settings) {
@@ -59,6 +60,7 @@ class SettingsRepository(context: Context) {
             .putFloat(K_RATE, s.ttsRate)
             .putFloat(K_VOLUME, s.ttsVolume)
             .putFloat(K_PAN, s.ttsPan)
+            .putBoolean(K_DUCK, s.duckMusic)
             .apply()
     }
 
@@ -73,6 +75,7 @@ class SettingsRepository(context: Context) {
         const val K_RATE = "tts_rate"
         const val K_VOLUME = "tts_volume"
         const val K_PAN = "tts_pan"
+        const val K_DUCK = "duck_music"
         const val K_BATTERY_NUDGE_SHOWN = "battery_nudge_shown"
     }
 }

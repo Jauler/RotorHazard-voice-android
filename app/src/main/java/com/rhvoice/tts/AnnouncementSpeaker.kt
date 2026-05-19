@@ -67,7 +67,8 @@ class AnnouncementSpeaker(
             putFloat(TextToSpeech.Engine.KEY_PARAM_PAN, s.ttsPan.coerceIn(-1f, 1f))
         }
 
-        if (outstanding.getAndIncrement() == 0) requestFocus()
+        val duck = s.duckMusic
+        if (outstanding.getAndIncrement() == 0 && duck) requestFocus()
         val id = "rhvoice-${seq.incrementAndGet()}"
         val res = tts.speak(text, TextToSpeech.QUEUE_ADD, params, id)
         if (res != TextToSpeech.SUCCESS) onUtteranceFinished()

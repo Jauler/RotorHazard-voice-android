@@ -2,6 +2,7 @@ package com.rhvoice.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -26,6 +27,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -39,6 +41,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.PowerManager
 import android.provider.Settings as AndroidSettings
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
@@ -149,6 +152,21 @@ fun SettingsScreen(
             FloatSlider("Volume", settings.ttsVolume, 0.0f..1.0f, vm::setVolume)
             FloatSlider("Pan (L↔R)", settings.ttsPan, -1.0f..1.0f, vm::setPan)
 
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Duck background music")
+                    Text(
+                        text = "Lower other audio (e.g. music) while announcements play.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+                Switch(checked = settings.duckMusic, onCheckedChange = vm::setDuckMusic)
+            }
+
             Button(
                 onClick = {
                     previewer.speak(
@@ -159,6 +177,7 @@ fun SettingsScreen(
                         rate = settings.ttsRate,
                         volume = settings.ttsVolume,
                         pan = settings.ttsPan,
+                        duckMusic = settings.duckMusic,
                     )
                 },
                 modifier = Modifier.fillMaxWidth(),

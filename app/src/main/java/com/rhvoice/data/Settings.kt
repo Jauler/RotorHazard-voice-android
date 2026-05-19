@@ -10,4 +10,5 @@ data class Settings(
     val ttsRate: Float = 1.0f,
     val ttsVolume: Float = 1.0f,
     val ttsPan: Float = 0.0f,
+    val duckMusic: Boolean = true,
 )
