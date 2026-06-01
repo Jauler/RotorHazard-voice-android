@@ -6,6 +6,8 @@ import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import com.rhvoice.data.SettingsRepository
@@ -33,6 +35,8 @@ class AnnouncementSpeaker(
 
     private val outstanding = AtomicInteger(0)
     private val seq = AtomicInteger(0)
+
+    private val handler = Handler(Looper.getMainLooper())
 
     private val boosted = BoostedAudioSession(audioManager)
 
@@ -73,10 +77,21 @@ class AnnouncementSpeaker(
         }
 
         val duck = s.duckMusic
-        if (outstanding.getAndIncrement() == 0 && duck) requestFocus()
+        // Newly acquiring focus: the OS needs a moment to actually ramp other
+        // audio down. Delay the first utterance so its start isn't clipped over
+        // un-ducked music. Subsequent queued utterances speak immediately.
+        val justAcquiredFocus = outstanding.getAndIncrement() == 0 && duck
+        if (justAcquiredFocus) requestFocus()
+
         val id = "rhvoice-${seq.incrementAndGet()}"
-        val res = tts.speak(text, TextToSpeech.QUEUE_ADD, params, id)
-        if (res != TextToSpeech.SUCCESS) onUtteranceFinished()
+        val dispatch = Runnable {
+            val res = tts.speak(text, TextToSpeech.QUEUE_ADD, params, id)
+            if (res != TextToSpeech.SUCCESS) onUtteranceFinished()
+        }
+        // Always go through the handler so FIFO order is preserved relative to
+        // a pending delayed first utterance.
+        if (justAcquiredFocus) handler.postDelayed(dispatch, DUCK_SETTLE_MS)
+        else handler.post(dispatch)
     }
 
     private fun onUtteranceFinished() {
@@ -106,9 +121,15 @@ class AnnouncementSpeaker(
     }
 
     fun shutdown() {
+        handler.removeCallbacksAndMessages(null)
         runCatching { tts.stop() }
         runCatching { tts.shutdown() }
         boosted.release()
         releaseFocus()
+    }
+
+    private companion object {
+        /** Delay between acquiring audio focus (ducking) and starting speech. */
+        const val DUCK_SETTLE_MS = 300L
     }
 }
