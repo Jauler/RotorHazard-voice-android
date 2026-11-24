@@ -126,6 +126,22 @@ fun SettingsScreen(
             HorizontalDivider()
             SectionHeader("Text-to-Speech")
 
+            OutlinedTextField(
+                value = settings.speechServerUrl,
+                onValueChange = vm::setSpeechServerUrl,
+                label = { Text("Speech server URL (optional)") },
+                supportingText = {
+                    Text(
+                        "OpenAI-compatible server, e.g. http://10.73.0.1:8880. Empty: use the device voice " +
+                            "below, which is also the fallback when the server can't be reached. " +
+                            "Pitch and pan apply to the device voice only."
+                    )
+                },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                modifier = Modifier.fillMaxWidth(),
+            )
+
             // Language
             val languages = remember(previewer) { previewer.availableLanguages() }
             LanguageDropdown(
@@ -179,6 +195,7 @@ fun SettingsScreen(
                         volume = settings.ttsVolume,
                         pan = settings.ttsPan,
                         duckMusic = settings.duckMusic,
+                        serverUrl = settings.speechServerUrl,
                     )
                 },
                 modifier = Modifier.fillMaxWidth(),

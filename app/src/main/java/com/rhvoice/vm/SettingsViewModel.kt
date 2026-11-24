@@ -24,6 +24,7 @@ class SettingsViewModel(
     fun setVolume(v: Float) = repo.update { it.copy(ttsVolume = v) }
     fun setPan(v: Float) = repo.update { it.copy(ttsPan = v) }
     fun setDuckMusic(v: Boolean) = repo.update { it.copy(duckMusic = v) }
+    fun setSpeechServerUrl(v: String) = repo.update { it.copy(speechServerUrl = v) }
 
     companion object {
         val Factory: ViewModelProvider.Factory = object : ViewModelProvider.Factory {

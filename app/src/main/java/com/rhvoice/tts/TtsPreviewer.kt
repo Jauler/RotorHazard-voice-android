@@ -6,9 +6,12 @@ import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import java.util.Locale
+import java.util.concurrent.Executors
 
 class TtsPreviewer(context: Context) {
 
@@ -30,6 +33,10 @@ class TtsPreviewer(context: Context) {
     private var holdingFocus = false
 
     private val boosted = BoostedAudioSession(audioManager)
+
+    private val remote = RemoteSpeech(audioAttributes, boosted)
+    private val remoteExecutor = Executors.newSingleThreadExecutor()
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     private var ready = false
     private val tts: TextToSpeech = TextToSpeech(appContext) { status ->
@@ -55,17 +62,21 @@ class TtsPreviewer(context: Context) {
         volume: Float,
         pan: Float,
         duckMusic: Boolean,
+        serverUrl: String = "",
     ) {
-        if (!ready) return
+        val url = serverUrl.trim()
+        if (!ready && url.isEmpty()) return
 
-        if (!localeTag.isNullOrBlank()) {
-            tts.language = Locale.forLanguageTag(localeTag)
+        if (ready) {
+            if (!localeTag.isNullOrBlank()) {
+                tts.language = Locale.forLanguageTag(localeTag)
+            }
+            if (!voiceName.isNullOrBlank()) {
+                tts.voices?.firstOrNull { it.name == voiceName }?.let { tts.voice = it }
+            }
+            tts.setPitch(pitch.coerceIn(0.1f, 2.0f))
+            tts.setSpeechRate(rate.coerceIn(0.1f, 3.0f))
         }
-        if (!voiceName.isNullOrBlank()) {
-            tts.voices?.firstOrNull { it.name == voiceName }?.let { tts.voice = it }
-        }
-        tts.setPitch(pitch.coerceIn(0.1f, 2.0f))
-        tts.setSpeechRate(rate.coerceIn(0.1f, 3.0f))
 
         val ttsVolume = boosted.applyVolume(volume)
 
@@ -78,8 +89,18 @@ class TtsPreviewer(context: Context) {
         // QUEUE_FLUSH means a previous preview's onDone won't fire — release any focus we held.
         releaseFocus()
         if (duckMusic) requestFocus()
-        val res = tts.speak(text, TextToSpeech.QUEUE_FLUSH, params, "rhvoice-preview")
-        if (res != TextToSpeech.SUCCESS) releaseFocus()
+        val speakOnDevice = Runnable {
+            val res = if (ready) tts.speak(text, TextToSpeech.QUEUE_FLUSH, params, "rhvoice-preview") else TextToSpeech.ERROR
+            if (res != TextToSpeech.SUCCESS) releaseFocus()
+        }
+        if (url.isEmpty()) {
+            speakOnDevice.run()
+            return
+        }
+        remoteExecutor.execute {
+            val spoken = runCatching { remote.speak(url, text, rate, ttsVolume) }.getOrDefault(false)
+            mainHandler.post { if (spoken) releaseFocus() else speakOnDevice.run() }
+        }
     }
 
     private fun requestFocus() {
@@ -114,6 +135,7 @@ class TtsPreviewer(context: Context) {
         if (ready) tts.availableLanguages?.toList().orEmpty() else emptyList()
 
     fun shutdown() {
+        remoteExecutor.shutdownNow()
         runCatching { tts.stop() }
         runCatching { tts.shutdown() }
         boosted.release()

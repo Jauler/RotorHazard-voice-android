@@ -28,6 +28,10 @@ is on. A phone in your pocket should do the same job.
   focus is only held across each tone cluster.
 - **Configurable TTS** — voice, language, pitch, speech rate, volume, pan. All settings
   are persisted in `EncryptedSharedPreferences` and survive reboots.
+- **Optional speech server** — announcements can come from an OpenAI-compatible speech
+  server (`POST /v1/audio/speech`, 16-bit WAV, e.g. a Piper server) instead of the phone's
+  TTS engine, for natural voices on devices without good local ones. If the server can't be
+  reached, the phone's voice says the announcement instead.
 - **Settings preview** — a *Speak sample* button on the Settings screen so you can
   tune voice / pitch / rate without running a real race.
 - **Reconnect on its own** — the Socket.IO client transparently reconnects with
@@ -65,6 +69,9 @@ Requirements: Android 8.0 (API 26) or newer.
 3. Under **Text-to-Speech**, pick a language and voice from your phone's installed
    TTS engine, then dial in pitch, speech rate, volume, and pan. Tap **Speak sample**
    to preview. Settings save automatically.
+   Optionally enter a **Speech server URL** (e.g. `http://10.73.0.1:8880`) to use a
+   speech server's voice; speech rate and volume apply to it, pitch and pan only to the
+   phone's voice.
 4. Back on the main screen, tap **Start**. A persistent notification confirms the
    foreground service is running.
 5. Stage and run races from the RotorHazard web UI as usual. RH-Voice will speak

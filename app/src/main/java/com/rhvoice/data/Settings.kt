@@ -11,4 +11,6 @@ data class Settings(
     val ttsVolume: Float = 1.0f,
     val ttsPan: Float = 0.0f,
     val duckMusic: Boolean = true,
+    /** OpenAI-compatible speech server; empty = use the device's TTS engine. */
+    val speechServerUrl: String = "",
 )

@@ -8,10 +8,12 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import com.rhvoice.data.SettingsRepository
 import java.util.Locale
+import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 
 class AnnouncementSpeaker(
@@ -40,6 +42,10 @@ class AnnouncementSpeaker(
 
     private val boosted = BoostedAudioSession(audioManager)
 
+    private val remote = RemoteSpeech(audioAttributes, boosted)
+    // one at a time, so remote announcements keep their order
+    private val remoteExecutor = Executors.newSingleThreadExecutor()
+
     private var ready = false
     private val tts: TextToSpeech = TextToSpeech(appContext) { status ->
         ready = status == TextToSpeech.SUCCESS
@@ -56,17 +62,22 @@ class AnnouncementSpeaker(
     }
 
     fun speak(text: String) {
-        if (!ready || text.isBlank()) return
+        if (text.isBlank()) return
         val s = repo.settings.value
+        val serverUrl = s.speechServerUrl.trim()
+        // a speech server works even when the device has no usable TTS engine
+        if (!ready && serverUrl.isEmpty()) return
 
-        if (!s.ttsLocaleTag.isNullOrBlank()) {
-            tts.language = Locale.forLanguageTag(s.ttsLocaleTag)
+        if (ready) {
+            if (!s.ttsLocaleTag.isNullOrBlank()) {
+                tts.language = Locale.forLanguageTag(s.ttsLocaleTag)
+            }
+            if (!s.ttsVoiceName.isNullOrBlank()) {
+                tts.voices?.firstOrNull { it.name == s.ttsVoiceName }?.let { tts.voice = it }
+            }
+            tts.setPitch(s.ttsPitch.coerceIn(0.1f, 2.0f))
+            tts.setSpeechRate(s.ttsRate.coerceIn(0.1f, 3.0f))
         }
-        if (!s.ttsVoiceName.isNullOrBlank()) {
-            tts.voices?.firstOrNull { it.name == s.ttsVoiceName }?.let { tts.voice = it }
-        }
-        tts.setPitch(s.ttsPitch.coerceIn(0.1f, 2.0f))
-        tts.setSpeechRate(s.ttsRate.coerceIn(0.1f, 3.0f))
 
         val ttsVolume = boosted.applyVolume(s.ttsVolume)
 
@@ -85,8 +96,20 @@ class AnnouncementSpeaker(
 
         val id = "rhvoice-${seq.incrementAndGet()}"
         val dispatch = Runnable {
-            val res = tts.speak(text, TextToSpeech.QUEUE_ADD, params, id)
+            val res = if (ready) tts.speak(text, TextToSpeech.QUEUE_ADD, params, id) else TextToSpeech.ERROR
             if (res != TextToSpeech.SUCCESS) onUtteranceFinished()
+        }
+
+        if (serverUrl.isNotEmpty()) {
+            val notBefore = if (justAcquiredFocus) SystemClock.uptimeMillis() + DUCK_SETTLE_MS else 0L
+            remoteExecutor.execute {
+                val spoken = runCatching {
+                    remote.speak(serverUrl, text, s.ttsRate, ttsVolume, notBefore)
+                }.getOrDefault(false)
+                // server unreachable or broken: say it with the device voice instead
+                if (spoken) onUtteranceFinished() else handler.post(dispatch)
+            }
+            return
         }
         // Always go through the handler so FIFO order is preserved relative to
         // a pending delayed first utterance.
@@ -122,6 +145,7 @@ class AnnouncementSpeaker(
 
     fun shutdown() {
         handler.removeCallbacksAndMessages(null)
+        remoteExecutor.shutdownNow()
         runCatching { tts.stop() }
         runCatching { tts.shutdown() }
         boosted.release()
